@@ -33,7 +33,6 @@ int queue_append(queue_t **queue, queue_t *elem)
     queue_t **head = queue;
     if ((*head) == NULL)
     {
-        printf("entrou aqui\n");
         // fila vazia
         *head = elem;
         (*head)->next = (*head);
@@ -41,28 +40,28 @@ int queue_append(queue_t **queue, queue_t *elem)
     }
     else
     {
-        printf("entrou nessoutro\n");
-
-        queue_t *travel = *head;
-        if (travel->next == *head)
-        {
-            travel->next = elem;
-            travel->prev = elem;
-            travel->next->next = *head;
-            travel->next->prev = *head;
-        }
-        else
-        {
-            queue_t *last = travel->prev;
-            travel->prev = elem;
-            travel->prev->prev = last;
-            last->next = elem;
-        }
+        // fila com ao menos 1 elemento
+        queue_t *h = *head;
+        queue_t *last = h->prev;
+        h->prev = elem;
+        last->next = elem;
+        elem->next = h;
+        elem->prev = last;
     }
     return 0;
 }
 
 int queue_remove(queue_t **queue, queue_t *elem)
 {
+    if (elem == NULL || *queue == NULL)
+        return 1;
+
+    if (*queue == elem) {
+        printf("oi\n");
+        *queue = (*queue)->next;
+        (*queue)->prev = (*queue)->prev->prev;
+    }
+    
+
     return 0;
 }
