@@ -63,15 +63,13 @@ int queue_remove(queue_t **queue, queue_t *elem)
 
     queue_t *travel = *queue;
 
-    if (travel == elem && travel->next == travel)
-    {
+    if (travel == elem && travel->next == travel) // se fila tiver so 1 elemento
         *queue = NULL;
-    }
 
     while (travel != elem)
     {
         travel = travel->next;
-        if (travel == *queue)
+        if (travel == *queue) // elem nao esta em queue
             return 1;
     }
 
@@ -79,9 +77,7 @@ int queue_remove(queue_t **queue, queue_t *elem)
     travel->prev->next = travel->next;
 
     if (*queue == travel)
-    {
         *queue = travel->next;
-    }
 
     elem->next = NULL;
     elem->prev = NULL;
