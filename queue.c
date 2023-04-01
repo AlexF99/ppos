@@ -1,5 +1,4 @@
 #include "queue.h"
-#include <stdio.h>
 
 int queue_size(queue_t *queue)
 {
@@ -18,12 +17,14 @@ int queue_size(queue_t *queue)
 
 void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
+    if (queue == NULL)
+        return 0;
     queue_t *head = queue;
     print_elem(head);
     queue_t *travel = queue->next;
     while (travel && travel != head)
     {
-        print_elem(travel);
+        print_elem((queue_t *)travel);
         travel = travel->next;
     }
 }
@@ -31,6 +32,10 @@ void queue_print(char *name, queue_t *queue, void print_elem(void *))
 int queue_append(queue_t **queue, queue_t *elem)
 {
     queue_t **head = queue;
+
+    if (elem->next != NULL || elem->prev != NULL)
+        return;
+
     if ((*head) == NULL)
     {
         // fila vazia
@@ -56,12 +61,30 @@ int queue_remove(queue_t **queue, queue_t *elem)
     if (elem == NULL || *queue == NULL)
         return 1;
 
-    if (*queue == elem) {
-        printf("oi\n");
-        *queue = (*queue)->next;
-        (*queue)->prev = (*queue)->prev->prev;
+    queue_t *travel = *queue;
+
+    if (travel == elem && travel->next == travel)
+    {
+        *queue = NULL;
     }
-    
+
+    while (travel != elem)
+    {
+        travel = travel->next;
+        if (travel == *queue)
+            return 1;
+    }
+
+    travel->next->prev = travel->prev;
+    travel->prev->next = travel->next;
+
+    if (*queue == travel)
+    {
+        *queue = travel->next;
+    }
+
+    elem->next = NULL;
+    elem->prev = NULL;
 
     return 0;
 }
