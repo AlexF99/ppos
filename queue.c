@@ -18,7 +18,7 @@ int queue_size(queue_t *queue)
 void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
     if (queue == NULL)
-        return 0;
+        return;
     queue_t *head = queue;
     print_elem(head);
     queue_t *travel = queue->next;
@@ -34,7 +34,7 @@ int queue_append(queue_t **queue, queue_t *elem)
     queue_t **head = queue;
 
     if (elem->next != NULL || elem->prev != NULL)
-        return;
+        return 1;
 
     if ((*head) == NULL)
     {
