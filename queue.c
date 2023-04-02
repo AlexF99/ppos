@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "queue.h"
 
 int queue_size(queue_t *queue)
@@ -18,7 +19,10 @@ int queue_size(queue_t *queue)
 void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
     if (queue == NULL)
+    {
+        fprintf(stderr, "fila vazia");
         return;
+    }
     queue_t *head = queue;
     print_elem(head);
     queue_t *travel = queue->next;
@@ -34,7 +38,10 @@ int queue_append(queue_t **queue, queue_t *elem)
     queue_t **head = queue;
 
     if (elem->next != NULL || elem->prev != NULL)
+    {
+        fprintf(stderr, "elemento a ser inserido pertence a outra fila");
         return 1;
+    }
 
     if ((*head) == NULL)
     {
@@ -59,7 +66,10 @@ int queue_append(queue_t **queue, queue_t *elem)
 int queue_remove(queue_t **queue, queue_t *elem)
 {
     if (elem == NULL || *queue == NULL)
+    {
+        fprintf(stderr, "elemento a ser deletado nulo ou fila nula");
         return 1;
+    }
 
     queue_t *travel = *queue;
 
@@ -70,7 +80,10 @@ int queue_remove(queue_t **queue, queue_t *elem)
     {
         travel = travel->next;
         if (travel == *queue) // elem nao esta em queue
+        {
+            fprintf(stderr, "elemento a ser deletado nao pertence a fila");
             return 1;
+        }
     }
 
     travel->next->prev = travel->prev;
