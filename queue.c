@@ -20,7 +20,7 @@ void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
     if (queue == NULL)
     {
-        fprintf(stderr, "fila vazia");
+        fprintf(stderr, "fila vazia\n");
         return;
     }
     queue_t *head = queue;
@@ -39,7 +39,7 @@ int queue_append(queue_t **queue, queue_t *elem)
 
     if (elem->next != NULL || elem->prev != NULL)
     {
-        fprintf(stderr, "elemento a ser inserido pertence a outra fila");
+        fprintf(stderr, "elemento a ser inserido pertence a outra fila\n");
         return 1;
     }
 
@@ -67,7 +67,7 @@ int queue_remove(queue_t **queue, queue_t *elem)
 {
     if (elem == NULL || *queue == NULL)
     {
-        fprintf(stderr, "elemento a ser deletado nulo ou fila nula");
+        fprintf(stderr, "elemento a ser deletado nulo ou fila nula\n");
         return 1;
     }
 
@@ -81,7 +81,7 @@ int queue_remove(queue_t **queue, queue_t *elem)
         travel = travel->next;
         if (travel == *queue) // elem nao esta em queue
         {
-            fprintf(stderr, "elemento a ser deletado nao pertence a fila");
+            fprintf(stderr, "elemento a ser deletado nao pertence a fila\n");
             return 1;
         }
     }
