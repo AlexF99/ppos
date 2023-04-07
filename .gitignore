@@ -1,3 +1,5 @@
 testafila
 *.o
 *tar.gz
+
+a.out
