@@ -5,16 +5,16 @@
 
 #define STACKSIZE 64 * 1024
 
-task_t *curr, *MainTask;
+task_t *curr;
+task_t MainTask;
 int task_index = 0;
 
 void ppos_init()
 {
     setvbuf(stdout, 0, _IONBF, 0);
-    MainTask = malloc(sizeof(task_t));
-    getcontext(&(MainTask)->context);
-    MainTask->id = task_index++;
-    curr = MainTask;
+    getcontext(&(MainTask.context));
+    MainTask.id = task_index++;
+    curr = &MainTask;
 }
 
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
@@ -53,7 +53,7 @@ int task_switch(task_t *task)
 
 void task_exit(int exit_code)
 {
-    task_switch(MainTask);
+    task_switch(&MainTask);
 }
 
 int task_id()
