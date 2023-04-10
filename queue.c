@@ -18,19 +18,25 @@ int queue_size(queue_t *queue)
 
 void queue_print(char *name, queue_t *queue, void print_elem(void *))
 {
+    printf("%s: [", name);
     if (queue == NULL)
     {
-        fprintf(stderr, "fila vazia\n");
+        printf("]\n");
         return;
     }
     queue_t *head = queue;
     print_elem(head);
+    printf(" ");
+
     queue_t *travel = queue->next;
     while (travel && travel != head)
     {
         print_elem((queue_t *)travel);
         travel = travel->next;
+        if (travel != head)
+            printf(" ");
     }
+    printf("]\n");
 }
 
 int queue_append(queue_t **queue, queue_t *elem)
