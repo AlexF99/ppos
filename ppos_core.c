@@ -6,14 +6,21 @@
 #define STACKSIZE 64 * 1024
 
 task_t *curr, *MainTask;
+int task_index = 0;
 
 void ppos_init()
 {
     setvbuf(stdout, 0, _IONBF, 0);
+    MainTask = malloc(sizeof(task_t));
+    getcontext(&(MainTask)->context);
+    MainTask->id = task_index++;
+    curr = MainTask;
 }
 
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 {
+    task->id = task_index++;
+
     char *stack = malloc(STACKSIZE);
 
     getcontext(&(task->context));
@@ -32,7 +39,6 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
     }
 
     makecontext(&(task->context), (void *)(*start_routine), 1, (char *)arg);
-    curr = task;
 
     return 0;
 }
