@@ -7,6 +7,14 @@
 
 #define STACKSIZE 64 * 1024
 
+enum status
+{
+    TERMINATED = 0,
+    READY = 1,
+    SUSPENDED = 2,
+    RUNNING = 3
+};
+
 task_t *curr;
 task_t MainTask, Dispatcher;
 task_t *user_tasks;
@@ -28,16 +36,16 @@ void dispatcher()
         if (next != NULL)
         {
             task_switch(next);
-
             switch (next->status)
             {
-            case 1:
+            case READY:
                 /* pronta */
                 break;
-            case 2:
+            case TERMINATED:
+                queue_remove((queue_t**)&user_tasks, (queue_t*)next);
                 /* terminada */
                 break;
-            case 3:
+            case SUSPENDED:
                 /* suspensa */
                 break;
 
@@ -65,7 +73,7 @@ void print_task(void *ptr)
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 {
     task->id = task_index++;
-    task->status = 1;
+    task->status = READY;
 
     char *stack = malloc(STACKSIZE);
 
@@ -95,10 +103,8 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 void ppos_init()
 {
     setvbuf(stdout, 0, _IONBF, 0);
-    getcontext(&(MainTask.context));
-    MainTask.id = task_index++;
+    task_init(&MainTask, (void *)NULL, "");
     curr = &MainTask;
-
     task_init(&Dispatcher, dispatcher, "");
 }
 
@@ -117,7 +123,11 @@ void task_yield()
 
 void task_exit(int exit_code)
 {
-    task_switch(&MainTask);
+    curr->status = exit_code;
+    if (curr == &Dispatcher)
+        task_switch(&MainTask);
+    else
+        task_yield();
 }
 
 int task_id()
