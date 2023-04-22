@@ -20,6 +20,10 @@ task_t MainTask, Dispatcher;
 task_t *user_tasks;
 int task_index = 0;
 
+void task_setprio(task_t *task, int prio) {}
+
+int task_getprio(task_t *task) {}
+
 task_t *scheduler()
 {
     task_t *aux = user_tasks;
@@ -42,7 +46,7 @@ void dispatcher()
                 /* pronta */
                 break;
             case TERMINATED:
-                queue_remove((queue_t**)&user_tasks, (queue_t*)next);
+                queue_remove((queue_t **)&user_tasks, (queue_t *)next);
                 /* terminada */
                 break;
             case SUSPENDED:
@@ -74,6 +78,7 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 {
     task->id = task_index++;
     task->status = READY;
+    task->priority = 0;
 
     char *stack = malloc(STACKSIZE);
 
