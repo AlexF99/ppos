@@ -16,6 +16,7 @@ typedef struct task_t
   int id;
   ucontext_t context;
   short status; // ready, suspended, terminated, running...
+  int static_priority;
   int priority;
 } task_t;
 

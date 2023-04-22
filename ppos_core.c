@@ -20,15 +20,60 @@ task_t MainTask, Dispatcher;
 task_t *user_tasks;
 int task_index = 0;
 
-void task_setprio(task_t *task, int prio) {}
+void print_task(void *ptr)
+{
+    task_t *elem = ptr;
 
-int task_getprio(task_t *task) {}
+    if (!elem)
+        return;
+
+    elem->prev ? printf("%d", elem->prev->id) : printf("*");
+    printf("<%d prio: %d>", elem->id, elem->priority);
+    elem->next ? printf("%d", elem->next->id) : printf("*");
+}
+
+void task_setprio(task_t *task, int prio)
+{
+    if (prio < -20 || prio > 20)
+    {
+        fprintf(stderr, "Prioridade invalida");
+        return;
+    }
+    task_t *aux = task == NULL ? curr : task;
+    aux->static_priority = prio;
+    aux->priority = aux->static_priority;
+}
+
+int task_getprio(task_t *task)
+{
+    task_t *aux = task == NULL ? curr : task;
+    return aux->static_priority;
+}
 
 task_t *scheduler()
 {
+    int tasks_size = queue_size((queue_t *)user_tasks);
+    int tasks_size_cp = tasks_size;
     task_t *aux = user_tasks;
-    user_tasks = user_tasks->next;
-    return aux;
+    task_t *next = aux;
+    while (tasks_size > 0)
+    {
+        if (aux->priority < next->priority)
+            next = aux;
+
+        aux = aux->next;
+        tasks_size--;
+    }
+    tasks_size = tasks_size_cp;
+    while (tasks_size > 0)
+    {
+        if (aux != next)
+            aux->priority--;
+        aux = aux->next;
+        tasks_size--;
+    }
+    next->priority = next->static_priority;
+    return next;
 }
 
 void dispatcher()
@@ -39,15 +84,16 @@ void dispatcher()
         next = scheduler();
         if (next != NULL)
         {
-            task_switch(next);
             switch (next->status)
             {
             case READY:
                 /* pronta */
                 break;
             case TERMINATED:
-                queue_remove((queue_t **)&user_tasks, (queue_t *)next);
                 /* terminada */
+                queue_remove((queue_t **)&user_tasks, (queue_t *)next);
+                if (user_tasks != NULL)
+                    next = scheduler();
                 break;
             case SUSPENDED:
                 /* suspensa */
@@ -57,28 +103,17 @@ void dispatcher()
                 fprintf(stderr, "erro de status da tarefa");
                 break;
             }
+            task_switch(next);
         }
     }
     task_exit(0);
-}
-
-void print_task(void *ptr)
-{
-    task_t *elem = ptr;
-
-    if (!elem)
-        return;
-
-    elem->prev ? printf("%d", elem->prev->id) : printf("*");
-    printf("<%d>", elem->id);
-    elem->next ? printf("%d", elem->next->id) : printf("*");
 }
 
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 {
     task->id = task_index++;
     task->status = READY;
-    task->priority = 0;
+    task_setprio(task, 0);
 
     char *stack = malloc(STACKSIZE);
 
