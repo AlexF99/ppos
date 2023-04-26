@@ -114,25 +114,25 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
     task->id = task_index++;
     task->status = READY;
     task_setprio(task, 0);
-
-    char *stack = malloc(STACKSIZE);
-
     getcontext(&(task->context));
 
-    if (stack)
+    if (task != &MainTask)
     {
-        (task->context).uc_stack.ss_sp = stack;
-        (task->context).uc_stack.ss_size = STACKSIZE;
-        (task->context).uc_stack.ss_flags = 0;
-        (task->context).uc_link = 0;
+        char *stack = malloc(STACKSIZE);
+        if (stack)
+        {
+            (task->context).uc_stack.ss_sp = stack;
+            (task->context).uc_stack.ss_size = STACKSIZE;
+            (task->context).uc_stack.ss_flags = 0;
+            (task->context).uc_link = 0;
+        }
+        else
+        {
+            perror("Erro na criação da pilha: ");
+            exit(1);
+        }
+        makecontext(&(task->context), (void *)(*start_routine), 1, (char *)arg);
     }
-    else
-    {
-        perror("Erro na criação da pilha: ");
-        exit(1);
-    }
-
-    makecontext(&(task->context), (void *)(*start_routine), 1, (char *)arg);
 
     if (task != &Dispatcher)
         queue_append((queue_t **)&user_tasks, (queue_t *)task);
