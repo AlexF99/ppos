@@ -103,6 +103,7 @@ void dispatcher()
                 fprintf(stderr, "erro de status da tarefa");
                 break;
             }
+            user_tasks = next;
             task_switch(next);
         }
     }
