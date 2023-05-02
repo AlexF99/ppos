@@ -16,3 +16,9 @@ tasks:
 queue:
 	gcc -Wall -c queue.c -o queue.o
 	gcc -Wall queue.o tests_testafila.c -o teste
+
+
+clean: 
+	rm *.o
+	rm a.out
+	rm teste
