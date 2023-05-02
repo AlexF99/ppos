@@ -1,3 +1,8 @@
+// PingPongOS - PingPong Operating System
+// Alexandre de Oliveira Plugge Freitas
+// GRR20205646
+// 2023
+
 #include <stdio.h>
 #include "queue.h"
 

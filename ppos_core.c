@@ -1,3 +1,8 @@
+// PingPongOS - PingPong Operating System
+// Alexandre de Oliveira Plugge Freitas
+// GRR20205646
+// 2023
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <ucontext.h>

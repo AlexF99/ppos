@@ -1,6 +1,7 @@
 // PingPongOS - PingPong Operating System
-// Prof. Carlos A. Maziero, DINF UFPR
-// Versão 1.5 -- Março de 2023
+// Alexandre de Oliveira Plugge Freitas
+// GRR20205646
+// 2023
 
 // Estruturas de dados internas do sistema operacional
 
