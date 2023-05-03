@@ -10,6 +10,9 @@
 #include "ppos.h"
 #include "queue.h"
 
+#include <signal.h>
+#include <sys/time.h>
+
 #define STACKSIZE 64 * 1024
 
 enum status
@@ -24,6 +27,11 @@ task_t *curr;
 task_t MainTask, Dispatcher;
 task_t *user_tasks;
 int task_index = 0;
+int tick_counter = 0;
+
+// timer and signal action for time preemption
+struct sigaction action;
+struct itimerval timer;
 
 void print_task(void *ptr)
 {
@@ -109,10 +117,22 @@ void dispatcher()
                 break;
             }
             user_tasks = next;
+            tick_counter = 20;
             task_switch(next);
         }
     }
     task_exit(0);
+}
+
+void tick_handler(int signum)
+{
+    if (curr->is_usertask)
+    {
+        if (tick_counter > 0)
+            tick_counter--;
+        else
+            task_yield();
+    }
 }
 
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
@@ -141,7 +161,12 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
     }
 
     if (task != &Dispatcher)
+    {
+        task->is_usertask = 1;
         queue_append((queue_t **)&user_tasks, (queue_t *)task);
+    }
+    else
+        task->is_usertask = 0;
 
     return 0;
 }
@@ -152,6 +177,29 @@ void ppos_init()
     task_init(&MainTask, (void *)NULL, "");
     curr = &MainTask;
     task_init(&Dispatcher, dispatcher, "");
+
+    // registra a ação para o sinal de timer SIGALRM (sinal do timer)
+    action.sa_handler = tick_handler;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    if (sigaction(SIGALRM, &action, 0) < 0)
+    {
+        perror("Erro em sigaction: ");
+        exit(1);
+    }
+
+    // ajusta valores do temporizador
+    timer.it_value.tv_usec = 1000;    // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec = 0;        // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = 1000; // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec = 0;     // disparos subsequentes, em segundos
+
+    // arma o temporizador ITIMER_REAL
+    if (setitimer(ITIMER_REAL, &timer, 0) < 0)
+    {
+        perror("Erro em setitimer: ");
+        exit(1);
+    }
 }
 
 int task_switch(task_t *task)

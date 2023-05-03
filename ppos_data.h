@@ -19,6 +19,7 @@ typedef struct task_t
   short status; // ready, suspended, terminated, running...
   int static_priority;
   int priority;
+  short is_usertask;
 } task_t;
 
 // estrutura que define um semáforo
