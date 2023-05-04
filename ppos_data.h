@@ -1,7 +1,4 @@
-// PingPongOS - PingPong Operating System
-// Alexandre de Oliveira Plugge Freitas
-// GRR20205646
-// 2023
+// GRR20205646 Alexandre de Oliveira Plugge Freitas
 
 // Estruturas de dados internas do sistema operacional
 

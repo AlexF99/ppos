@@ -1,7 +1,4 @@
-// PingPongOS - PingPong Operating System
-// Alexandre de Oliveira Plugge Freitas
-// GRR20205646
-// 2023
+// GRR20205646 Alexandre de Oliveira Plugge Freitas
 // Definição e operações em uma fila genérica.
 
 // ESTE ARQUIVO NÃO DEVE SER MODIFICADO - ELE SERÁ SOBRESCRITO NOS TESTES
