@@ -26,9 +26,16 @@ task_t *user_tasks;
 int task_index = 0;
 int tick_counter = 0;
 
+unsigned int time = 0;
+
 // timer and signal action for time preemption
 struct sigaction action;
 struct itimerval timer;
+
+unsigned int systime()
+{
+    return time;
+}
 
 void print_task(void *ptr)
 {
@@ -89,7 +96,7 @@ task_t *scheduler()
 void dispatcher()
 {
     task_t *next;
-    while (user_tasks != NULL)
+    while (user_tasks != NULL && user_tasks->next != NULL && user_tasks->prev != NULL)
     {
         next = scheduler();
         if (next != NULL)
@@ -115,7 +122,8 @@ void dispatcher()
             }
             user_tasks = next;
             tick_counter = 20;
-            task_switch(next);
+            if (next && next->next && next->prev)
+                task_switch(next);
         }
     }
     task_exit(0);
@@ -123,6 +131,8 @@ void dispatcher()
 
 void tick_handler(int signum)
 {
+    time++;
+    curr->processor_time++;
     if (curr->is_usertask)
     {
         if (tick_counter > 0)
@@ -136,6 +146,9 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
 {
     task->id = task_index++;
     task->status = READY;
+    task->creation_time = systime();
+    task->activations = 0;
+    task->processor_time = 0;
     task_setprio(task, 0);
     getcontext(&(task->context));
 
@@ -173,6 +186,7 @@ void ppos_init()
     setvbuf(stdout, 0, _IONBF, 0);
     task_init(&MainTask, (void *)NULL, "");
     curr = &MainTask;
+    curr->activations = 1;
     task_init(&Dispatcher, dispatcher, "");
 
     // registra a ação para o sinal de timer SIGALRM (sinal do timer)
@@ -201,6 +215,7 @@ void ppos_init()
 
 int task_switch(task_t *task)
 {
+    task->activations++;
     task_t *old = curr;
     curr = task;
     swapcontext(&(old->context), &(curr->context));
@@ -212,9 +227,18 @@ void task_yield()
     task_switch(&Dispatcher);
 }
 
+void task_accounting(task_t *task)
+{
+    printf("task %d exit: ", curr->id);
+    printf("execution time %d ms. ", systime() - curr->creation_time);
+    printf("processor time %d ms. ", curr->processor_time);
+    printf("%d activations\n", curr->activations);
+}
+
 void task_exit(int exit_code)
 {
     curr->status = exit_code;
+    task_accounting(curr);
     if (curr == &Dispatcher)
         task_switch(&MainTask);
     else
