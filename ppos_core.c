@@ -131,8 +131,6 @@ void dispatcher()
 
 void tick_handler(int signum)
 {
-    time++;
-    curr->processor_time++;
     if (curr->is_usertask)
     {
         if (tick_counter > 0)
@@ -140,6 +138,8 @@ void tick_handler(int signum)
         else
             task_yield();
     }
+    time++;
+    curr->processor_time++;
 }
 
 int task_init(task_t *task, void (*start_routine)(void *), void *arg)
