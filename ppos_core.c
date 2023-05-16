@@ -11,6 +11,7 @@
 #include <sys/time.h>
 
 #define STACKSIZE 64 * 1024
+#define QUANTUM 20
 
 enum status
 {
@@ -23,6 +24,7 @@ enum status
 task_t *curr;
 task_t MainTask, Dispatcher;
 task_t *user_tasks;
+int ready_size = 0;
 int task_index = 0;
 int tick_counter = 0;
 
@@ -45,13 +47,13 @@ void print_task(void *ptr)
         return;
 
     elem->prev ? printf("%d", elem->prev->id) : printf("*");
-    printf("<%d prio: %d>", elem->id, elem->priority);
+    printf("<%d>", elem->id);
     elem->next ? printf("%d", elem->next->id) : printf("*");
 }
 
 void task_setprio(task_t *task, int prio)
 {
-    if (prio < -20 || prio > 20)
+    if (prio < QUANTUM * -1 || prio > QUANTUM)
     {
         fprintf(stderr, "Prioridade invalida");
         return;
@@ -96,7 +98,7 @@ task_t *scheduler()
 void dispatcher()
 {
     task_t *next;
-    while (user_tasks != NULL && user_tasks->next != NULL && user_tasks->prev != NULL)
+    while (ready_size > 0)
     {
         next = scheduler();
         if (next != NULL)
@@ -108,7 +110,6 @@ void dispatcher()
                 break;
             case TERMINATED:
                 /* terminada */
-                queue_remove((queue_t **)&user_tasks, (queue_t *)next);
                 if (user_tasks != NULL)
                     next = scheduler();
                 break;
@@ -121,8 +122,8 @@ void dispatcher()
                 break;
             }
             user_tasks = next;
-            tick_counter = 20;
-            if (next && next->next && next->prev)
+            tick_counter = QUANTUM;
+            if (ready_size > 0)
                 task_switch(next);
         }
     }
@@ -174,6 +175,7 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
     {
         task->is_usertask = 1;
         queue_append((queue_t **)&user_tasks, (queue_t *)task);
+        ready_size++;
     }
     else
         task->is_usertask = 0;
@@ -238,6 +240,11 @@ void task_accounting(task_t *task)
 void task_exit(int exit_code)
 {
     curr->status = exit_code;
+    if (user_tasks != NULL && curr != NULL)
+    {
+        queue_remove((queue_t **)&user_tasks, (queue_t *)curr);
+        ready_size--;
+    }
     task_accounting(curr);
     if (curr == &Dispatcher)
         task_switch(&MainTask);

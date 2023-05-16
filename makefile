@@ -1,7 +1,7 @@
 run:
 	gcc -Wall -c queue.c -o queue.o
 	gcc -Wall -c ppos_core.c -o ppos_core.o
-	gcc -Wall queue.o ppos_core.o tests_account.c -o teste
+	gcc -Wall queue.o ppos_core.o tests_account2.c -o teste
 
 preempt:
 	gcc -Wall -c queue.c -o queue.o
