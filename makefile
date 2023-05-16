@@ -27,8 +27,9 @@ queue:
 	gcc -Wall -c queue.c -o queue.o
 	gcc -Wall queue.o tests_testafila.c -o teste
 
+turnin:
+	tar -zcvf aopf20.tar.gz *.h ppos_core.c queue.c
 
 clean: 
-	rm a.out
 	rm *.o
 	rm teste
