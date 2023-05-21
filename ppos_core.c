@@ -114,11 +114,11 @@ void dispatcher()
                     next = scheduler();
                 break;
             case SUSPENDED:
-                /* suspensa */
+                fprintf(stderr, "ERRO: tarefa suspensa escalonada\n");
                 break;
 
             default:
-                fprintf(stderr, "erro de status da tarefa");
+                fprintf(stderr, "ERRO: erro de status da tarefa\n");
                 break;
             }
             user_tasks = next;
@@ -239,24 +239,53 @@ void task_accounting(task_t *task)
 
 void task_exit(int exit_code)
 {
-    curr->status = exit_code;
+    curr->status = TERMINATED;
+    curr->exit_code = exit_code;
     if (user_tasks != NULL && curr != NULL)
     {
         queue_remove((queue_t **)&user_tasks, (queue_t *)curr);
         ready_size--;
     }
     task_accounting(curr);
+
+    while (curr->suspended_queue != NULL)
+    {
+        task_t *task = curr->suspended_queue;
+        curr->suspended_queue = task->next;
+        task_resume(task, &(curr->suspended_queue));
+    }
     if (curr == &Dispatcher)
         task_switch(&MainTask);
     else
         task_yield();
 }
 
-int task_wait(task_t *task) {}
+int task_wait(task_t *task)
+{
+    if (task != NULL && task->status != TERMINATED)
+    {
+        task_suspend(&(task->suspended_queue));
+        task_yield();
+        return task->exit_code;
+    }
+    return -1;
+}
 
-void task_suspend(task_t **queue) {}
+void task_suspend(task_t **queue)
+{
+    curr->status = SUSPENDED;
+    if (user_tasks != NULL)
+        queue_remove((queue_t **)&user_tasks, (queue_t *)curr);
+    queue_append((queue_t **)queue, (queue_t *)curr);
+}
 
-void task_resume(task_t *task, task_t **queue) {}
+void task_resume(task_t *task, task_t **queue)
+{
+    task->status = READY;
+    if (queue != NULL)
+        queue_remove((queue_t **)queue, (queue_t *)task);
+    queue_append((queue_t **)&user_tasks, (queue_t *)task);
+}
 
 int task_id()
 {

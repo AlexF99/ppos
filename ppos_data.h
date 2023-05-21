@@ -20,6 +20,8 @@ typedef struct task_t
   unsigned int creation_time;
   int activations;
   unsigned int processor_time;
+  int exit_code;
+  struct task_t *suspended_queue;
 } task_t;
 
 // estrutura que define um semáforo
