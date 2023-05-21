@@ -252,6 +252,12 @@ void task_exit(int exit_code)
         task_yield();
 }
 
+int task_wait(task_t *task) {}
+
+void task_suspend(task_t **queue) {}
+
+void task_resume(task_t *task, task_t **queue) {}
+
 int task_id()
 {
     return curr->id;
