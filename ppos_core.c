@@ -23,8 +23,8 @@ enum status
 
 task_t *curr;
 task_t MainTask, Dispatcher;
-task_t *user_tasks;
-int ready_size = 0;
+task_t *ready_queue;
+int alive_tasks = 0;
 int task_index = 0;
 int tick_counter = 0;
 
@@ -71,9 +71,9 @@ int task_getprio(task_t *task)
 
 task_t *scheduler()
 {
-    int tasks_size = queue_size((queue_t *)user_tasks);
+    int tasks_size = queue_size((queue_t *)ready_queue);
     int tasks_size_cp = tasks_size;
-    task_t *aux = user_tasks;
+    task_t *aux = ready_queue;
     task_t *next = aux;
     while (tasks_size > 0)
     {
@@ -98,7 +98,7 @@ task_t *scheduler()
 void dispatcher()
 {
     task_t *next;
-    while (ready_size > 0)
+    while (alive_tasks > 0)
     {
         next = scheduler();
         if (next != NULL)
@@ -110,7 +110,7 @@ void dispatcher()
                 break;
             case TERMINATED:
                 /* terminada */
-                if (user_tasks != NULL)
+                if (ready_queue != NULL)
                     next = scheduler();
                 break;
             case SUSPENDED:
@@ -121,9 +121,9 @@ void dispatcher()
                 fprintf(stderr, "ERRO: erro de status da tarefa\n");
                 break;
             }
-            user_tasks = next;
+            ready_queue = next;
             tick_counter = QUANTUM;
-            if (ready_size > 0)
+            if (alive_tasks > 0)
                 task_switch(next);
         }
     }
@@ -174,8 +174,8 @@ int task_init(task_t *task, void (*start_routine)(void *), void *arg)
     if (task != &Dispatcher)
     {
         task->is_usertask = 1;
-        queue_append((queue_t **)&user_tasks, (queue_t *)task);
-        ready_size++;
+        queue_append((queue_t **)&ready_queue, (queue_t *)task);
+        alive_tasks++;
     }
     else
         task->is_usertask = 0;
@@ -241,10 +241,10 @@ void task_exit(int exit_code)
 {
     curr->status = TERMINATED;
     curr->exit_code = exit_code;
-    if (user_tasks != NULL && curr != NULL)
+    if (ready_queue != NULL && curr != NULL)
     {
-        queue_remove((queue_t **)&user_tasks, (queue_t *)curr);
-        ready_size--;
+        queue_remove((queue_t **)&ready_queue, (queue_t *)curr);
+        alive_tasks--;
     }
     task_accounting(curr);
 
@@ -274,8 +274,8 @@ int task_wait(task_t *task)
 void task_suspend(task_t **queue)
 {
     curr->status = SUSPENDED;
-    if (user_tasks != NULL)
-        queue_remove((queue_t **)&user_tasks, (queue_t *)curr);
+    if (ready_queue != NULL)
+        queue_remove((queue_t **)&ready_queue, (queue_t *)curr);
     queue_append((queue_t **)queue, (queue_t *)curr);
 }
 
@@ -284,7 +284,7 @@ void task_resume(task_t *task, task_t **queue)
     task->status = READY;
     if (queue != NULL)
         queue_remove((queue_t **)queue, (queue_t *)task);
-    queue_append((queue_t **)&user_tasks, (queue_t *)task);
+    queue_append((queue_t **)&ready_queue, (queue_t *)task);
 }
 
 int task_id()
