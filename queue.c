@@ -1,7 +1,6 @@
 // GRR20205646 Alexandre de Oliveira Plugge Freitas
 
 #include <stdio.h>
-#include <stdlib.h>
 #include "queue.h"
 
 int queue_size(queue_t *queue)
@@ -49,8 +48,6 @@ int queue_append(queue_t **queue, queue_t *elem)
     if (elem->next != NULL || elem->prev != NULL)
     {
         fprintf(stderr, "elemento a ser inserido pertence a outra fila\n");
-        exit(-1);
-
         return 1;
     }
 
