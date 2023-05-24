@@ -73,54 +73,64 @@ int task_getprio(task_t *task)
 
 task_t *scheduler()
 {
-    int tasks_size = queue_size((queue_t *)ready_queue);
-    int tasks_size_cp = tasks_size;
-    task_t *aux = ready_queue;
-    task_t *next = aux;
-    while (tasks_size > 0)
+    if (ready_queue != NULL)
     {
-        if (aux->priority < next->priority)
-            next = aux;
+        int tasks_size = queue_size((queue_t *)ready_queue);
+        int tasks_size_cp = tasks_size;
+        task_t *aux = ready_queue;
+        task_t *next = aux;
+        while (tasks_size > 0)
+        {
+            if (aux->priority < next->priority)
+                next = aux;
 
-        aux = aux->next;
-        tasks_size--;
+            aux = aux->next;
+            tasks_size--;
+        }
+        tasks_size = tasks_size_cp;
+        while (tasks_size > 0)
+        {
+            if (aux != next)
+                aux->priority--;
+            aux = aux->next;
+            tasks_size--;
+        }
+        next->priority = next->static_priority;
+        return next;
     }
-    tasks_size = tasks_size_cp;
-    while (tasks_size > 0)
-    {
-        if (aux != next)
-            aux->priority--;
-        aux = aux->next;
-        tasks_size--;
-    }
-    next->priority = next->static_priority;
-    return next;
+    return NULL;
 }
 
 // wake up tasks that are asleep and can be awakened
 void sleeping_awake()
 {
-    // if (sleeping_queue != NULL)
-    // {
-    //     if (sleeping_queue == sleeping_queue->next)
-    //     {
-    //         if (systime() >= sleeping_queue->wakeup_time)
-    //             task_resume(sleeping_queue, &sleeping_queue);
-    //             sleeping_queue = NULL;
-    //         return;
-    //     }
-    //     else
-    //     {
-    //         task_t *travel = sleeping_queue->next;
-    //         while (travel != sleeping_queue)
-    //         {
-    //             if (systime() >= travel->wakeup_time)
-    //                 task_resume(travel, &sleeping_queue);
-    //             return;
 
-    //         }
-    //     }
-    // }
+    if (sleeping_queue != NULL)
+    {
+        if (sleeping_queue == sleeping_queue->next && systime() >= sleeping_queue->wakeup_time)
+        {
+            task_resume(sleeping_queue, &sleeping_queue);
+            return;
+        }
+        if (systime() >= sleeping_queue->wakeup_time) {
+            task_t *aux = sleeping_queue;
+            sleeping_queue = sleeping_queue->next;
+            task_resume(aux, &sleeping_queue);
+        }
+        task_t *travel = sleeping_queue->next;
+        while (travel != sleeping_queue)
+        {
+            if (systime() >= travel->wakeup_time)
+            {
+                task_resume(travel, &sleeping_queue);
+                travel = sleeping_queue->next;
+            }
+            else
+            {
+                travel = travel->next;
+            }
+        }
+    }
 }
 
 void dispatcher()
