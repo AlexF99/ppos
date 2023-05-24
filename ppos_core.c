@@ -24,6 +24,8 @@ enum status
 task_t *curr;
 task_t MainTask, Dispatcher;
 task_t *ready_queue;
+task_t *sleeping_queue;
+
 int alive_tasks = 0;
 int task_index = 0;
 int tick_counter = 0;
@@ -95,11 +97,38 @@ task_t *scheduler()
     return next;
 }
 
+// wake up tasks that are asleep and can be awakened
+void sleeping_awake()
+{
+    // if (sleeping_queue != NULL)
+    // {
+    //     if (sleeping_queue == sleeping_queue->next)
+    //     {
+    //         if (systime() >= sleeping_queue->wakeup_time)
+    //             task_resume(sleeping_queue, &sleeping_queue);
+    //             sleeping_queue = NULL;
+    //         return;
+    //     }
+    //     else
+    //     {
+    //         task_t *travel = sleeping_queue->next;
+    //         while (travel != sleeping_queue)
+    //         {
+    //             if (systime() >= travel->wakeup_time)
+    //                 task_resume(travel, &sleeping_queue);
+    //             return;
+
+    //         }
+    //     }
+    // }
+}
+
 void dispatcher()
 {
     task_t *next;
     while (alive_tasks > 0)
     {
+        sleeping_awake();
         next = scheduler();
         if (next != NULL)
         {
@@ -285,6 +314,13 @@ void task_resume(task_t *task, task_t **queue)
     if (queue != NULL)
         queue_remove((queue_t **)queue, (queue_t *)task);
     queue_append((queue_t **)&ready_queue, (queue_t *)task);
+}
+
+void task_sleep(int t)
+{
+    curr->wakeup_time = systime() + t;
+    task_suspend(&sleeping_queue);
+    task_yield();
 }
 
 int task_id()
