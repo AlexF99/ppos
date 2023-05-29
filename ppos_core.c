@@ -101,10 +101,20 @@ task_t *scheduler()
     return NULL;
 }
 
+void wakeup_all(task_t **queue)
+{
+    task_t *head = *queue;
+    while (head != NULL)
+    {
+        task_t *task = head;
+        head = task->next;
+        task_resume(task, &head);
+    }
+}
+
 // wake up tasks that are asleep and can be awakened
 void sleeping_awake()
 {
-
     if (sleeping_queue != NULL)
     {
         if (sleeping_queue == sleeping_queue->next && systime() >= sleeping_queue->wakeup_time)
@@ -112,7 +122,8 @@ void sleeping_awake()
             task_resume(sleeping_queue, &sleeping_queue);
             return;
         }
-        if (systime() >= sleeping_queue->wakeup_time) {
+        if (systime() >= sleeping_queue->wakeup_time)
+        {
             task_t *aux = sleeping_queue;
             sleeping_queue = sleeping_queue->next;
             task_resume(aux, &sleeping_queue);
@@ -286,13 +297,7 @@ void task_exit(int exit_code)
         alive_tasks--;
     }
     task_accounting(curr);
-
-    while (curr->suspended_queue != NULL)
-    {
-        task_t *task = curr->suspended_queue;
-        curr->suspended_queue = task->next;
-        task_resume(task, &(curr->suspended_queue));
-    }
+    wakeup_all(&(curr->suspended_queue));
     if (curr == &Dispatcher)
         task_switch(&MainTask);
     else
