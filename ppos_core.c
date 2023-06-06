@@ -128,6 +128,8 @@ void sleeping_awake()
             sleeping_queue = sleeping_queue->next;
             task_resume(aux, &sleeping_queue);
         }
+        if (sleeping_queue == NULL)
+            return;
         task_t *travel = sleeping_queue->next;
         while (travel != sleeping_queue)
         {
@@ -375,15 +377,14 @@ int sem_down(semaphore_t *s)
 
     enter_cs(&lock);
     s->value--;
-    printf("sem %d value (down): %d\n", s->id, s->value);
     leave_cs(&lock);
     if (s->value < 0)
     {
         enter_cs(&lock);
         task_suspend(&(s->queue));
         leave_cs(&lock);
+        task_yield();
     }
-    task_yield();
     return 0;
 }
 
@@ -394,7 +395,6 @@ int sem_up(semaphore_t *s)
 
     enter_cs(&lock);
     s->value++;
-    printf("sem %d value (up): %d\n", s->id, s->value);
     leave_cs(&lock);
     if (s->queue != NULL)
     {
