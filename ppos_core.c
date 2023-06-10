@@ -103,13 +103,16 @@ task_t *scheduler()
 
 void wakeup_all(task_t **queue)
 {
-    task_t *head = *queue;
-    while (head != NULL)
+    if (queue == NULL || *queue == NULL)
+        return;
+    task_t *travel = (*queue)->next;
+    while (travel != *queue)
     {
-        task_t *task = head;
-        head = task->next;
-        task_resume(task, &head);
+        task_t *task = travel;
+        travel = travel->next;
+        task_resume(task, queue);
     }
+    task_resume(travel, queue);
 }
 
 // wake up tasks that are asleep and can be awakened
