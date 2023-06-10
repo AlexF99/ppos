@@ -4,8 +4,10 @@
 #include "ppos.h"
 #include "queue.h"
 
-task_t prod, cons;
+task_t prod1, prod2, prod3, cons1, cons2;
 semaphore_t s_item, s_buffer, s_vaga;
+
+int buflen = 0;
 
 typedef struct filaint_t
 {
@@ -29,64 +31,76 @@ void print_elem(void *ptr)
     elem->next ? printf("%d", elem->next->value) : printf("*");
 }
 
-void producer()
+void producer(void *arg)
 {
-    task_sleep(1000);
-    int item = rand();
-    printf("adding item %d to buffer", item);
+    for (;;)
+    {
+        task_sleep(1000);
 
-    sem_down(&s_vaga);
+        int item = rand() % 20;
 
-    sem_down(&s_buffer);
-    queue_append((queue_t **)&buffer, (queue_t *)&item);
-    sem_up(&s_buffer);
-    queue_print("buffer", (queue_t *)buffer, print_elem);
+        filaint_t *elem = malloc(sizeof(filaint_t *));
+        elem->next = NULL;
+        elem->prev = NULL;
+        elem->value = item;
 
-    sem_up(&s_item);
+        sem_down(&s_vaga);
+
+        sem_down(&s_buffer);
+        queue_append((queue_t **)&buffer, (queue_t *)elem);
+        ++buflen;
+        printf("%s produziu %d (tem:%d)\n", (char *)arg, item, buflen);
+        sem_up(&s_buffer);
+        // queue_print("buffer", (queue_t *)buffer, print_elem);
+
+        sem_up(&s_item);
+    }
 }
 
-void consumer()
+void consumer(void *arg)
 {
-    sem_down(&s_item);
+    for (;;)
+    {
+        sem_down(&s_item);
 
-    sem_down(&s_buffer);
-    filaint_t item = *buffer;
-    queue_remove((queue_t **)&buffer, (queue_t *)buffer);
-    sem_up(&s_buffer);
+        filaint_t item;
 
-    sem_up(&s_vaga);
+        sem_down(&s_buffer);
+        if (buffer != NULL)
+        {
+            item = *buffer;
+            queue_remove((queue_t **)&buffer, (queue_t *)buffer);
+            --buflen;
+            printf("\t\t\t\t %s consumiu %d (tem:%d)\n", (char *)arg, item.value, buflen);
+        }
+        sem_up(&s_buffer);
 
-    printf("item removido: %d\n", item.value);
-    task_sleep(1000);
+        sem_up(&s_vaga);
+
+        task_sleep(1000);
+    }
 }
 
 int main()
 {
+    buffer = NULL;
     printf("main: inicio\n");
 
     ppos_init();
 
-    printf("aqui");
-
     // inicia semaforos
-    sem_init(&s_vaga, 5); // 5 vagas no buffer
-    printf("aqui2");
-
-    sem_init(&s_item, 1); // mutex item
-    printf("aqui3");
-
+    sem_init(&s_vaga, 5);   // 5 (0-4) vagas no buffer
+    sem_init(&s_item, 0);   // mutex item
     sem_init(&s_buffer, 1); // mutex buffer
-    printf("aqui4");
 
-    // inicia tarefas
-    task_init(&prod, producer, "producer");
-    printf("aqui5");
+    // inicia produtores
+    task_init(&prod1, producer, "producer 1");
+    task_init(&prod2, producer, "producer 2");
+    task_init(&prod3, producer, "producer 3");
 
-    task_init(&cons, consumer, "\tconsumer");
-    printf("aqui6\n");
-
-    task_wait(&prod);
-    printf("aqui7\n");
+    // inicia consumidores
+    task_init(&cons1, consumer, "\tconsumer 1");
+    task_init(&cons2, consumer, "\tconsumer 2");
 
     printf("main: fim\n");
     task_exit(0);
