@@ -48,14 +48,14 @@ int sem_down(semaphore_t *s)
 
     enter_cs(&lock);
     s->value--;
-    leave_cs(&lock);
     if (s->value < 0)
     {
-        enter_cs(&lock);
         task_suspend(&(s->queue));
         leave_cs(&lock);
         task_yield();
     }
+    else
+        leave_cs(&lock);
     return 0;
 }
 
@@ -66,15 +66,13 @@ int sem_up(semaphore_t *s)
 
     enter_cs(&lock);
     s->value++;
-    leave_cs(&lock);
-    if (s->queue != NULL)
+    if (s->queue != NULL && s->value <= 0)
     {
-        enter_cs(&lock);
         task_t *task = s->queue;
         s->queue = s->queue->next;
         task_resume(task, &(s->queue));
-        leave_cs(&lock);
     }
+    leave_cs(&lock);
     task_yield();
     return 0;
 }
