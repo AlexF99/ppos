@@ -51,7 +51,6 @@ void producer(void *arg)
         ++buflen;
         printf("%s produziu %d (tem:%d)\n", (char *)arg, item, buflen);
         sem_up(&s_buffer);
-        // queue_print("buffer", (queue_t *)buffer, print_elem);
 
         sem_up(&s_item);
     }
