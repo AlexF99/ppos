@@ -45,10 +45,23 @@ typedef struct
   // preencher quando necessário
 } barrier_t;
 
+typedef struct
+{
+  void *msg;
+  struct mqueue_t *prev;
+  struct mqueue_t *next;
+} msgq_node_t;
+
 // estrutura que define uma fila de mensagens
 typedef struct
 {
-  // preencher quando necessário
+  msgq_node_t *buffer;
+  int num_msgs;
+  int max_msgs;
+  int msg_size;
+  semaphore_t *s_mqueue;
+  semaphore_t *s_vaga;
+  semaphore_t *s_elem;
 } mqueue_t;
 
 #endif

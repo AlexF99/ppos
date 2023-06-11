@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ucontext.h>
+#include <string.h>
 #include "ppos_data.h"
 #include "ppos.h"
 #include "queue.h"
@@ -346,4 +347,69 @@ void task_sleep(int t)
 int task_id()
 {
     return curr->id;
+}
+
+int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size)
+{
+    if (queue == NULL)
+        return -1;
+
+    queue->msg_size = msg_size;
+    queue->num_msgs = 0;
+    sem_init(queue->s_elem, 0);
+    sem_init(queue->s_mqueue, 1);
+    sem_init(queue->s_vaga, max_msgs);
+
+    return 0;
+}
+
+int mqueue_send(mqueue_t *queue, void *msg)
+{
+    if (queue == NULL || msg == NULL)
+        return -1;
+
+    msgq_node_t elem;
+    memcpy(&elem.msg, msg, queue->msg_size);
+
+    sem_down(queue->s_vaga);
+
+    sem_down(queue->s_mqueue);
+    queue_append((queue_t **)&queue->buffer, (queue_t *)&elem);
+    queue->num_msgs++;
+    sem_up(queue->s_mqueue);
+
+    sem_up(queue->s_elem);
+    return 0;
+}
+
+int mqueue_recv(mqueue_t *queue, void *msg)
+{
+    if (queue == NULL)
+        return -1;
+
+    sem_down(queue->s_elem);
+
+    sem_down(queue->s_mqueue);
+    if (queue->buffer != NULL)
+    {
+        msgq_node_t *elem = queue->buffer;
+        memcpy(msg, elem->msg, queue->msg_size);
+        queue_remove((queue_t **)queue->buffer, (queue_t *)elem);
+        queue->num_msgs--;
+    }
+    sem_up(queue->s_mqueue);
+
+    sem_up(queue->s_vaga);
+
+    return 0;
+}
+
+int mqueue_destroy(mqueue_t *queue)
+{
+    return 0;
+}
+
+int mqueue_msgs(mqueue_t *queue)
+{
+    return 0;
 }
