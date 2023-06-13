@@ -358,21 +358,10 @@ int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size)
     queue->msg_size = msg_size;
     queue->num_msgs = 0;
     sem_init(&(queue->s_elem), 0);
-    sem_init(&(queue->s_mqueue), 1);
+    sem_init(&(queue->s_buffer), 1);
     sem_init(&(queue->s_vaga), max_msgs);
 
     return 0;
-}
-
-void print_elem(void *ptr)
-{
-    task_t *elem = ptr;
-    if (!elem)
-        return;
-
-    elem->prev ? printf("nn") : printf("*");
-    printf("<elem>", elem->id);
-    elem->next ? printf("nn") : printf("*");
 }
 
 int mqueue_send(mqueue_t *queue, void *msg)
@@ -382,24 +371,16 @@ int mqueue_send(mqueue_t *queue, void *msg)
 
     sem_down(&(queue->s_vaga));
 
-    if (queue->msg_size == sizeof(int))
-    {
-        int *val = (int *)msg;
-        printf("msg que chegou aqui:%d\n", *val);
-    }
-
     msgq_node_t *elem = malloc(sizeof(msgq_node_t));
     elem->msg = malloc(queue->msg_size);
     elem->next = NULL;
     elem->prev = NULL;
     memcpy(elem->msg, msg, queue->msg_size);
 
-    sem_down(&(queue->s_mqueue));
-    // printf("next: %d prev: %d\n", elem->next == NULL, elem->prev == NULL);
-    print_elem((void *)elem);
+    sem_down(&(queue->s_buffer));
     queue_append((queue_t **)&queue->buffer, (queue_t *)elem);
     queue->num_msgs++;
-    sem_up(&(queue->s_mqueue));
+    sem_up(&(queue->s_buffer));
 
     sem_up(&(queue->s_elem));
     return 0;
@@ -412,16 +393,15 @@ int mqueue_recv(mqueue_t *queue, void *msg)
 
     sem_down(&(queue->s_elem));
 
-    sem_down(&(queue->s_mqueue));
+    sem_down(&(queue->s_buffer));
     if (queue->buffer != NULL)
     {
-        printf("buffer nao nulo\n");
         msgq_node_t *elem = queue->buffer;
         memcpy(msg, elem->msg, queue->msg_size);
         queue_remove((queue_t **)&(queue->buffer), (queue_t *)elem);
         queue->num_msgs--;
     }
-    sem_up(&(queue->s_mqueue));
+    sem_up(&(queue->s_buffer));
 
     sem_up(&(queue->s_vaga));
 

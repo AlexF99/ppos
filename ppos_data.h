@@ -47,9 +47,9 @@ typedef struct
 
 typedef struct
 {
+  struct msgq_node_t *prev;
+  struct msgq_node_t *next;
   void *msg;
-  struct mqueue_t *prev;
-  struct mqueue_t *next;
 } msgq_node_t;
 
 // estrutura que define uma fila de mensagens
@@ -59,7 +59,7 @@ typedef struct
   int num_msgs;
   int max_msgs;
   int msg_size;
-  semaphore_t s_mqueue;
+  semaphore_t s_buffer;
   semaphore_t s_vaga;
   semaphore_t s_elem;
 } mqueue_t;
