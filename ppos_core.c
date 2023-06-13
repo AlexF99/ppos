@@ -369,7 +369,8 @@ int mqueue_send(mqueue_t *queue, void *msg)
     if (queue == NULL || msg == NULL)
         return -1;
 
-    sem_down(&(queue->s_vaga));
+    if (sem_down(&(queue->s_vaga)) < 0)
+        return -1;
 
     msgq_node_t *elem = malloc(sizeof(msgq_node_t));
     elem->msg = malloc(queue->msg_size);
@@ -377,12 +378,15 @@ int mqueue_send(mqueue_t *queue, void *msg)
     elem->prev = NULL;
     memcpy(elem->msg, msg, queue->msg_size);
 
-    sem_down(&(queue->s_buffer));
+    if (sem_down(&(queue->s_buffer)) < 0)
+        return -1;
     queue_append((queue_t **)&queue->buffer, (queue_t *)elem);
     queue->num_msgs++;
-    sem_up(&(queue->s_buffer));
+    if (sem_up(&(queue->s_buffer)) < 0)
+        return -1;
 
-    sem_up(&(queue->s_elem));
+    if (sem_up(&(queue->s_elem)) < 0)
+        return -1;
     return 0;
 }
 
@@ -391,9 +395,11 @@ int mqueue_recv(mqueue_t *queue, void *msg)
     if (queue == NULL)
         return -1;
 
-    sem_down(&(queue->s_elem));
+    if (sem_down(&(queue->s_elem)) < 0)
+        return -1;
 
-    sem_down(&(queue->s_buffer));
+    if (sem_down(&(queue->s_buffer)) < 0)
+        return -1;
     if (queue->buffer != NULL)
     {
         msgq_node_t *elem = queue->buffer;
@@ -401,9 +407,11 @@ int mqueue_recv(mqueue_t *queue, void *msg)
         queue_remove((queue_t **)&(queue->buffer), (queue_t *)elem);
         queue->num_msgs--;
     }
-    sem_up(&(queue->s_buffer));
+    if (sem_up(&(queue->s_buffer)) < 0)
+        return -1;
 
-    sem_up(&(queue->s_vaga));
+    if (sem_up(&(queue->s_vaga)) < 0)
+        return -1;
 
     return 0;
 }
@@ -413,18 +421,11 @@ int mqueue_destroy(mqueue_t *queue)
     if (queue == NULL)
         return -1;
 
-    sem_destroy(&queue->s_buffer);
-    sem_destroy(&queue->s_elem);
-    sem_destroy(&queue->s_vaga);
-
-    printf("destruiu todos os semaforos\n");
-
     if (queue->buffer)
     {
         msgq_node_t *travel = (msgq_node_t *)queue->buffer->next;
         if (travel == queue->buffer)
         {
-            printf("caiu o 1o\n");
             free(travel->msg);
             queue_remove((queue_t **)&queue->buffer, (queue_t *)travel);
             free(travel);
@@ -433,7 +434,6 @@ int mqueue_destroy(mqueue_t *queue)
 
         while (travel != queue->buffer)
         {
-            printf("caiu o 2o\n");
             msgq_node_t *msg = travel;
             travel = (msgq_node_t *)travel->next;
             free(msg->msg);
@@ -441,6 +441,11 @@ int mqueue_destroy(mqueue_t *queue)
             free(msg);
         }
     }
+
+    sem_destroy(&queue->s_buffer);
+    sem_destroy(&queue->s_elem);
+    sem_destroy(&queue->s_vaga);
+
     queue = NULL;
     return 0;
 }

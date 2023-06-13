@@ -38,12 +38,16 @@ int sem_init(semaphore_t *s, int value)
     s->value = value;
     s->queue = NULL;
     s->id = ++sem_id;
+    s->active = 1;
     return 0;
 }
 
 int sem_down(semaphore_t *s)
 {
     if (s == NULL)
+        return -1;
+
+    if (!s->active)
         return -1;
 
     enter_cs(&lock);
@@ -62,6 +66,9 @@ int sem_down(semaphore_t *s)
 int sem_up(semaphore_t *s)
 {
     if (s == NULL)
+        return -1;
+
+    if (!s->active)
         return -1;
 
     enter_cs(&lock);
@@ -83,6 +90,7 @@ int sem_destroy(semaphore_t *s)
         return -1;
 
     wakeup_sem_queue(&(s->queue));
-    s = NULL;
+    s->active = 0;
+    // s = NULL;
     return 0;
 }

@@ -31,6 +31,7 @@ typedef struct
   int id;
   int value;
   task_t *queue;
+  int active;
 } semaphore_t;
 
 // estrutura que define um mutex
