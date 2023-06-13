@@ -410,10 +410,44 @@ int mqueue_recv(mqueue_t *queue, void *msg)
 
 int mqueue_destroy(mqueue_t *queue)
 {
+    if (queue == NULL)
+        return -1;
+
+    sem_destroy(&queue->s_buffer);
+    sem_destroy(&queue->s_elem);
+    sem_destroy(&queue->s_vaga);
+
+    printf("destruiu todos os semaforos\n");
+
+    if (queue->buffer)
+    {
+        msgq_node_t *travel = (msgq_node_t *)queue->buffer->next;
+        if (travel == queue->buffer)
+        {
+            printf("caiu o 1o\n");
+            free(travel->msg);
+            queue_remove((queue_t **)&queue->buffer, (queue_t *)travel);
+            free(travel);
+            return 0;
+        }
+
+        while (travel != queue->buffer)
+        {
+            printf("caiu o 2o\n");
+            msgq_node_t *msg = travel;
+            travel = (msgq_node_t *)travel->next;
+            free(msg->msg);
+            queue_remove((queue_t **)&queue->buffer, (queue_t *)msg);
+            free(msg);
+        }
+    }
+    queue = NULL;
     return 0;
 }
 
 int mqueue_msgs(mqueue_t *queue)
 {
-    return 0;
+    if (queue == NULL)
+        return -1;
+    return queue->num_msgs;
 }
