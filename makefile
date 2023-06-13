@@ -17,7 +17,7 @@ semaphore:
 	gcc -Wall queue.o ppos_core.o ppos_ipc.o tests_sem.c -o teste
 
 turnin:
-	tar -zcvf aopf20.tar.gz *.h ppos_core.c queue.c
+	tar -zcvf aopf20.tar.gz *.h ppos_core.c queue.c ppos_ipc.c pingpong-prodcons.c
 
 clean:
 	rm *.o
