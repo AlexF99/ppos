@@ -59,9 +59,9 @@ typedef struct
   int num_msgs;
   int max_msgs;
   int msg_size;
-  semaphore_t *s_mqueue;
-  semaphore_t *s_vaga;
-  semaphore_t *s_elem;
+  semaphore_t s_mqueue;
+  semaphore_t s_vaga;
+  semaphore_t s_elem;
 } mqueue_t;
 
 #endif

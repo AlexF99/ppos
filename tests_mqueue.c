@@ -98,26 +98,17 @@ int main(int argc, char *argv[])
     mqueue_init(&queueValores, 5, sizeof(int));
     mqueue_init(&queueRaizes, 5, sizeof(double));
 
-    printf("chegou auqi\n");
-
     // cria as threads
     task_init(&somador, somaBody, NULL);
-    printf("chegou auqi2\n");
-
     task_init(&cons[0], consBody, NULL);
-    printf("chegou auqi3\n");
-
     task_init(&cons[1], consBody, NULL);
     task_init(&prod[0], prodBody, NULL);
     task_init(&prod[1], prodBody, NULL);
     task_init(&prod[2], prodBody, NULL);
 
-    printf("chegou auqi4\n");
-
     // aguarda o somador encerrar
     task_wait(&somador);
-    printf("chegou auqi5\n");
-
+    
     // destroi as filas de mensagens
     printf("main: destroi queueValores\n");
     mqueue_destroy(&queueValores);

@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <ucontext.h>
 #include <string.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <strings.h>
+
 #include "ppos_data.h"
 #include "ppos.h"
 #include "queue.h"
-
-#include <signal.h>
-#include <sys/time.h>
 
 #define STACKSIZE 64 * 1024
 #define QUANTUM 20
@@ -356,11 +357,22 @@ int mqueue_init(mqueue_t *queue, int max_msgs, int msg_size)
 
     queue->msg_size = msg_size;
     queue->num_msgs = 0;
-    sem_init(queue->s_elem, 0);
-    sem_init(queue->s_mqueue, 1);
-    sem_init(queue->s_vaga, max_msgs);
+    sem_init(&(queue->s_elem), 0);
+    sem_init(&(queue->s_mqueue), 1);
+    sem_init(&(queue->s_vaga), max_msgs);
 
     return 0;
+}
+
+void print_elem(void *ptr)
+{
+    task_t *elem = ptr;
+    if (!elem)
+        return;
+
+    elem->prev ? printf("nn") : printf("*");
+    printf("<elem>", elem->id);
+    elem->next ? printf("nn") : printf("*");
 }
 
 int mqueue_send(mqueue_t *queue, void *msg)
@@ -368,17 +380,28 @@ int mqueue_send(mqueue_t *queue, void *msg)
     if (queue == NULL || msg == NULL)
         return -1;
 
-    msgq_node_t elem;
-    memcpy(&elem.msg, msg, queue->msg_size);
+    sem_down(&(queue->s_vaga));
 
-    sem_down(queue->s_vaga);
+    if (queue->msg_size == sizeof(int))
+    {
+        int *val = (int *)msg;
+        printf("msg que chegou aqui:%d\n", *val);
+    }
 
-    sem_down(queue->s_mqueue);
-    queue_append((queue_t **)&queue->buffer, (queue_t *)&elem);
+    msgq_node_t *elem = malloc(sizeof(msgq_node_t));
+    elem->msg = malloc(queue->msg_size);
+    elem->next = NULL;
+    elem->prev = NULL;
+    memcpy(elem->msg, msg, queue->msg_size);
+
+    sem_down(&(queue->s_mqueue));
+    // printf("next: %d prev: %d\n", elem->next == NULL, elem->prev == NULL);
+    print_elem((void *)elem);
+    queue_append((queue_t **)&queue->buffer, (queue_t *)elem);
     queue->num_msgs++;
-    sem_up(queue->s_mqueue);
+    sem_up(&(queue->s_mqueue));
 
-    sem_up(queue->s_elem);
+    sem_up(&(queue->s_elem));
     return 0;
 }
 
@@ -387,19 +410,20 @@ int mqueue_recv(mqueue_t *queue, void *msg)
     if (queue == NULL)
         return -1;
 
-    sem_down(queue->s_elem);
+    sem_down(&(queue->s_elem));
 
-    sem_down(queue->s_mqueue);
+    sem_down(&(queue->s_mqueue));
     if (queue->buffer != NULL)
     {
+        printf("buffer nao nulo\n");
         msgq_node_t *elem = queue->buffer;
         memcpy(msg, elem->msg, queue->msg_size);
-        queue_remove((queue_t **)queue->buffer, (queue_t *)elem);
+        queue_remove((queue_t **)&(queue->buffer), (queue_t *)elem);
         queue->num_msgs--;
     }
-    sem_up(queue->s_mqueue);
+    sem_up(&(queue->s_mqueue));
 
-    sem_up(queue->s_vaga);
+    sem_up(&(queue->s_vaga));
 
     return 0;
 }
